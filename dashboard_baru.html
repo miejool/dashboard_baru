@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Pemantauan Sistem v2</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #e6edf3;
+      letter-spacing: 0.01em;
+    }
+
+    header p {
+      font-size: 0.8rem;
+      color: #7d8590;
+      margin-top: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* ── Server Status ── */
+    #server-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-dot.online  { background: #3fb950; animation: pulse-green 2s infinite; }
+    .status-dot.offline { background: #f85149; animation: none; }
+
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.5); }
+      50%       { box-shadow: 0 0 0 5px rgba(63, 185, 80, 0); }
+    }
+
+    #status-label { font-weight: 500; }
+    #status-label.online  { color: #3fb950; }
+    #status-label.offline { color: #f85149; }
+
+    /* ── Uptime Badge ── */
+    #uptime-badge {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 0.8rem;
+      color: #7d8590;
+    }
+    #uptime-badge span { color: #e6edf3; font-weight: 500; }
+
+    /* ── Metric Cards ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .cards-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 500px) {
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 20px 24px;
+      transition: border-color 0.3s;
+    }
+
+    .card-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #7d8590;
+      margin-bottom: 10px;
+    }
+
+    .card-value {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1;
+      transition: color 0.4s;
+    }
+
+    .card-bar-track {
+      margin-top: 14px;
+      height: 5px;
+      background: #21262d;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .card-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.6s ease, background 0.4s;
+    }
+
+    .card-sub {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: #7d8590;
+    }
+
+    .card-icon {
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+      opacity: 0.7;
+    }
+
+    /* value colours */
+    .low    { color: #3fb950; }
+    .medium { color: #d29922; }
+    .high   { color: #f85149; }
+
+    .bar-low    { background: #3fb950; }
+    .bar-medium { background: #d29922; }
+    .bar-high   { background: #f85149; }
+
+    .card.low    { border-color: #238636; }
+    .card.medium { border-color: #9e6a03; }
+    .card.high   { border-color: #da3633; }
+
+    /* ── Chart Section ── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 800px) {
+      .charts-row { grid-template-columns: 1fr; }
+    }
+
+    .chart-section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 20px 24px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chart-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #e6edf3;
+    }
+
+    .chart-subtitle {
+      font-size: 0.75rem;
+      color: #7d8590;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 12px;
+      font-size: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; color: #7d8590; }
+    .legend-dot  { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+    canvas#metricsChart {
+      display: block;
+      width: 100%;
+      height: 200px;
+    }
+
+    /* ── Gauge Chart ── */
+    canvas#gaugeChart {
+      display: block;
+      width: 100%;
+      height: 200px;
+    }
+
+    /* ── Alert Log ── */
+    .alert-section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+
+    .alert-section h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      color: #e6edf3;
+    }
+
+    .alert-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .alert-list::-webkit-scrollbar { width: 4px; }
+    .alert-list::-webkit-scrollbar-track { background: #0d1117; }
+    .alert-list::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+
+    .alert-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.78rem;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: #0d1117;
+      border-left: 3px solid #30363d;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .alert-item.warn  { border-left-color: #d29922; }
+    .alert-item.crit  { border-left-color: #f85149; }
+    .alert-item.info  { border-left-color: #3fb950; }
+
+    .alert-time { color: #484f58; flex-shrink: 0; }
+    .alert-msg  { color: #e6edf3; }
+    .alert-badge {
+      margin-left: auto;
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      flex-shrink: 0;
+    }
+    .badge-warn { background: rgba(210,153,34,0.15); color: #d29922; }
+    .badge-crit { background: rgba(248,81,73,0.15);  color: #f85149; }
+    .badge-info { background: rgba(63,185,80,0.15);  color: #3fb950; }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 8px;
+      text-align: center;
+      font-size: 0.72rem;
+      color: #484f58;
+      border-top: 1px solid #21262d;
+      padding-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div>
+      <h1>Dashboard Pemantauan Sistem</h1>
+      <p id="last-updated">Menunggu data…</p>
+    </div>
+    <div class="header-right">
+      <div id="uptime-badge" aria-label="Masa operasi sistem">
+        Uptime: <span id="uptime-val">00:00:00</span>
+      </div>
+      <div id="server-status" role="status" aria-live="polite">
+        <span class="status-dot online" id="status-dot" aria-hidden="true"></span>
+        <span id="status-label" class="online">Online</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Metric Cards -->
+  <div class="cards-grid" role="region" aria-label="Metrik sistem">
+    <!-- CPU -->
+    <div class="card low" id="card-cpu">
+      <div class="card-icon" aria-hidden="true">⚙️</div>
+      <div class="card-label">CPU Usage</div>
+      <div class="card-value low" id="val-cpu" aria-label="Penggunaan CPU">—</div>
+      <div class="card-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-labelledby="val-cpu">
+        <div class="card-bar-fill bar-low" id="bar-cpu" style="width:0%"></div>
+      </div>
+      <div class="card-sub" id="sub-cpu">Memuat…</div>
+    </div>
+    <!-- RAM -->
+    <div class="card low" id="card-ram">
+      <div class="card-icon" aria-hidden="true">🧠</div>
+      <div class="card-label">Memori (RAM)</div>
+      <div class="card-value low" id="val-ram" aria-label="Penggunaan RAM">—</div>
+      <div class="card-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-labelledby="val-ram">
+        <div class="card-bar-fill bar-low" id="bar-ram" style="width:0%"></div>
+      </div>
+      <div class="card-sub" id="sub-ram">Memuat…</div>
+    </div>
+    <!-- Disk -->
+    <div class="card low" id="card-disk">
+      <div class="card-icon" aria-hidden="true">💾</div>
+      <div class="card-label">Storan Disk</div>
+      <div class="card-value low" id="val-disk" aria-label="Penggunaan Disk">—</div>
+      <div class="card-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-labelledby="val-disk">
+        <div class="card-bar-fill bar-low" id="bar-disk" style="width:0%"></div>
+      </div>
+      <div class="card-sub" id="sub-disk">Memuat…</div>
+    </div>
+    <!-- Network -->
+    <div class="card low" id="card-net">
+      <div class="card-icon" aria-hidden="true">🌐</div>
+      <div class="card-label">Network I/O</div>
+      <div class="card-value low" id="val-net" aria-label="Trafik Rangkaian">—</div>
+      <div class="card-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-labelledby="val-net">
+        <div class="card-bar-fill bar-low" id="bar-net" style="width:0%"></div>
+      </div>
+      <div class="card-sub" id="sub-net">Memuat…</div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="charts-row">
+    <!-- Line Chart: CPU, RAM, Disk, Network -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Sejarah Penggunaan (60 saat terakhir)</div>
+          <div class="chart-subtitle">Kemaskini setiap 2s</div>
+        </div>
+      </div>
+      <div class="chart-legend" aria-hidden="true">
+        <div class="legend-item"><div class="legend-dot" style="background:#58a6ff"></div><span>CPU (%)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#bc8cff"></div><span>RAM (%)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3fb950"></div><span>Disk (%)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f0883e"></div><span>Network (%)</span></div>
+      </div>
+      <canvas id="metricsChart" aria-label="Graf sejarah penggunaan CPU, RAM, Disk dan Network" role="img"></canvas>
+    </div>
+
+    <!-- Gauge: Beban Keseluruhan -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Beban Keseluruhan</div>
+          <div class="chart-subtitle">Purata 4 metrik</div>
+        </div>
+      </div>
+      <canvas id="gaugeChart" aria-label="Gauge beban keseluruhan sistem" role="img"></canvas>
+    </div>
+  </div>
+
+  <!-- Alert Log -->
+  <div class="alert-section" role="log" aria-label="Log amaran sistem" aria-live="polite">
+    <h2>📋 Log Amaran</h2>
+    <div class="alert-list" id="alert-list">
+      <div class="alert-item info">
+        <span class="alert-time">--:--:--</span>
+        <span class="alert-msg">Sistem dimulakan. Menunggu data…</span>
+        <span class="alert-badge badge-info">INFO</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>Dibuat dengan IBM Bob &mdash; Dashboard Pemantauan Sistem v2 (Demo / Simulasi)</footer>
+
+  <script>
+    // ── Konstant ────────────────────────────────────────────────────────────────
+    const MAX_POINTS = 30; // 30 × 2s = 60 saat
+    const MAX_ALERTS = 12;
+
+    // ── State ───────────────────────────────────────────────────────────────────
+    const timeLabels   = [];
+    const cpuHistory   = [];
+    const ramHistory   = [];
+    const diskHistory  = [];
+    const netHistory   = [];
+
+    let state = {
+      cpu:          35,
+      ram:          55,
+      disk:         62,
+      net:          20,
+      serverOnline: true,
+      offlineTicks: 0,
+    };
+
+    let uptimeSeconds = 0;
+
+    // ── Uptime Counter ──────────────────────────────────────────────────────────
+    setInterval(() => {
+      uptimeSeconds++;
+      const h = Math.floor(uptimeSeconds / 3600).toString().padStart(2,'0');
+      const m = Math.floor((uptimeSeconds % 3600) / 60).toString().padStart(2,'0');
+      const s = (uptimeSeconds % 60).toString().padStart(2,'0');
+      document.getElementById('uptime-val').textContent = `${h}:${m}:${s}`;
+    }, 1000);
+
+    // ── Mock Data Generator ─────────────────────────────────────────────────────
+    function randomWalk(current, min, max, step) {
+      const delta = (Math.random() - 0.5) * 2 * step;
+      return Math.min(max, Math.max(min, current + delta));
+    }
+
+    function generateMockMetrics() {
+      state.cpu  = randomWalk(state.cpu,   5, 97, 6);
+      state.ram  = randomWalk(state.ram,  30, 88, 3);
+      state.disk = randomWalk(state.disk, 20, 90, 2);   // fix: step 2 (was 0.5)
+      state.net  = randomWalk(state.net,   0, 95, 8);
+
+      if (state.serverOnline) {
+        state.serverOnline = Math.random() > 0.05;
+        if (!state.serverOnline) state.offlineTicks = 2;
+      } else {
+        state.offlineTicks--;
+        if (state.offlineTicks <= 0) state.serverOnline = true;
+      }
+
+      return {
+        cpu:          Math.round(state.cpu),
+        ram:          Math.round(state.ram),
+        disk:         Math.round(state.disk),
+        net:          Math.round(state.net),
+        serverOnline: state.serverOnline,
+      };
+    }
+
+    // ── Colour Helper ───────────────────────────────────────────────────────────
+    function levelClass(pct) {
+      if (pct >= 80) return 'high';
+      if (pct >= 60) return 'medium';
+      return 'low';
+    }
+
+    function applyLevel(cardEl, valueEl, barEl, progressEl, pct) {
+      const lvl = levelClass(pct);
+      ['low', 'medium', 'high'].forEach(c => {
+        cardEl.classList.toggle(c, c === lvl);
+        valueEl.classList.toggle(c, c === lvl);
+        barEl.classList.toggle('bar-' + c, c === lvl);
+      });
+      barEl.style.width = pct + '%';
+      if (progressEl) progressEl.setAttribute('aria-valuenow', pct);
+    }
+
+    // ── Alert Logger ────────────────────────────────────────────────────────────
+    let prevLevels = { cpu: 'low', ram: 'low', disk: 'low', net: 'low', server: true };
+
+    function ts() {
+      const now = new Date();
+      return now.getHours().toString().padStart(2,'0') + ':'
+           + now.getMinutes().toString().padStart(2,'0') + ':'
+           + now.getSeconds().toString().padStart(2,'0');
+    }
+
+    function addAlert(msg, type) {
+      const list = document.getElementById('alert-list');
+      const item = document.createElement('div');
+      item.className = `alert-item ${type}`;
+      const typeMap = { warn: 'AMARAN', crit: 'KRITIKAL', info: 'INFO' };
+      item.innerHTML = `
+        <span class="alert-time">${ts()}</span>
+        <span class="alert-msg">${msg}</span>
+        <span class="alert-badge badge-${type}">${typeMap[type]}</span>
+      `;
+      list.insertBefore(item, list.firstChild);
+      // Hadkan jumlah alert
+      while (list.children.length > MAX_ALERTS) list.removeChild(list.lastChild);
+    }
+
+    function checkAlerts(m) {
+      // CPU
+      const cpuLvl = levelClass(m.cpu);
+      if (cpuLvl !== prevLevels.cpu) {
+        if (cpuLvl === 'high')   addAlert(`CPU kritikal: ${m.cpu}%`, 'crit');
+        if (cpuLvl === 'medium') addAlert(`CPU meningkat: ${m.cpu}%`, 'warn');
+        if (cpuLvl === 'low')    addAlert(`CPU kembali normal: ${m.cpu}%`, 'info');
+        prevLevels.cpu = cpuLvl;
+      }
+      // RAM
+      const ramLvl = levelClass(m.ram);
+      if (ramLvl !== prevLevels.ram) {
+        if (ramLvl === 'high')   addAlert(`Memori kritikal: ${m.ram}%`, 'crit');
+        if (ramLvl === 'medium') addAlert(`Memori sederhana: ${m.ram}%`, 'warn');
+        if (ramLvl === 'low')    addAlert(`Memori kembali normal: ${m.ram}%`, 'info');
+        prevLevels.ram = ramLvl;
+      }
+      // Disk
+      const diskLvl = levelClass(m.disk);
+      if (diskLvl !== prevLevels.disk) {
+        if (diskLvl === 'high')   addAlert(`Storan hampir penuh: ${m.disk}%`, 'crit');
+        if (diskLvl === 'medium') addAlert(`Storan sederhana: ${m.disk}%`, 'warn');
+        if (diskLvl === 'low')    addAlert(`Storan kembali mencukupi: ${m.disk}%`, 'info');
+        prevLevels.disk = diskLvl;
+      }
+      // Network
+      const netLvl = levelClass(m.net);
+      if (netLvl !== prevLevels.net) {
+        if (netLvl === 'high')   addAlert(`Trafik rangkaian tinggi: ${m.net}%`, 'crit');
+        if (netLvl === 'medium') addAlert(`Trafik rangkaian sederhana: ${m.net}%`, 'warn');
+        if (netLvl === 'low')    addAlert(`Trafik rangkaian normal: ${m.net}%`, 'info');
+        prevLevels.net = netLvl;
+      }
+      // Server
+      if (m.serverOnline !== prevLevels.server) {
+        if (!m.serverOnline) addAlert('Pelayan tidak dapat dihubungi!', 'crit');
+        else                 addAlert('Pelayan kembali dalam talian.', 'info');
+        prevLevels.server = m.serverOnline;
+      }
+    }
+
+    // ── DOM Update ──────────────────────────────────────────────────────────────
+    function updateCards(m) {
+      const metrics = [
+        { key:'cpu',  valId:'val-cpu',  subId:'sub-cpu',  barId:'bar-cpu',  cardId:'card-cpu',  progId:'bar-cpu',
+          subText: v => v > 80 ? 'Beban tinggi!' : v > 60 ? 'Sederhana' : 'Normal' },
+        { key:'ram',  valId:'val-ram',  subId:'sub-ram',  barId:'bar-ram',  cardId:'card-ram',  progId:'bar-ram',
+          subText: v => v > 80 ? 'Memori kritikal' : v > 60 ? 'Sederhana' : 'Mencukupi' },
+        { key:'disk', valId:'val-disk', subId:'sub-disk', barId:'bar-disk', cardId:'card-disk', progId:'bar-disk',
+          subText: v => v > 80 ? 'Ruang terhad' : v > 60 ? 'Sederhana' : 'Mencukupi' },
+        { key:'net',  valId:'val-net',  subId:'sub-net',  barId:'bar-net',  cardId:'card-net',  progId:'bar-net',
+          subText: v => v > 80 ? 'Trafik tinggi' : v > 60 ? 'Sederhana' : 'Normal' },
+      ];
+
+      metrics.forEach(({ key, valId, subId, barId, cardId, subText }) => {
+        const pct = m[key];
+        const valEl  = document.getElementById(valId);
+        const barEl  = document.getElementById(barId);
+        const cardEl = document.getElementById(cardId);
+        const track  = barEl.parentElement;
+
+        valEl.textContent = pct + '%';
+        document.getElementById(subId).textContent = subText(pct);
+        applyLevel(cardEl, valEl, barEl, track, pct);
+      });
+
+      // Server status
+      const dot   = document.getElementById('status-dot');
+      const label = document.getElementById('status-label');
+      if (m.serverOnline) {
+        dot.className   = 'status-dot online';
+        label.className = 'online';
+        label.textContent = 'Online';
+      } else {
+        dot.className   = 'status-dot offline';
+        label.className = 'offline';
+        label.textContent = 'Offline';
+      }
+
+      // Timestamp
+      document.getElementById('last-updated').textContent =
+        'Dikemaskini: ' + new Date().toLocaleTimeString('ms-MY');
+    }
+
+    // ── Canvas: Line Chart ──────────────────────────────────────────────────────
+    const lineCanvas = document.getElementById('metricsChart');
+
+    function drawLineChart() {
+      // Saiz semula hanya jika berubah (elak flicker)
+      const dpr = window.devicePixelRatio || 1;
+      const rect = lineCanvas.getBoundingClientRect();
+      const cw = Math.round(rect.width  * dpr);
+      const ch = Math.round(rect.height * dpr);
+      if (lineCanvas.width !== cw || lineCanvas.height !== ch) {
+        lineCanvas.width  = cw;
+        lineCanvas.height = ch;
+      }
+
+      const ctx = lineCanvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const W = rect.width, H = rect.height;
+      const PAD = { top: 10, right: 16, bottom: 28, left: 38 };
+      const plotW = W - PAD.left - PAD.right;
+      const plotH = H - PAD.top  - PAD.bottom;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Grid lines & Y-axis labels
+      ctx.strokeStyle = '#21262d';
+      ctx.lineWidth   = 1;
+      ctx.fillStyle   = '#7d8590';
+      ctx.font        = '10px -apple-system, Segoe UI, sans-serif';
+      ctx.textAlign   = 'right';
+      [0, 25, 50, 75, 100].forEach(v => {
+        const y = PAD.top + plotH - (v / 100) * plotH;
+        ctx.beginPath();
+        ctx.moveTo(PAD.left, y);
+        ctx.lineTo(PAD.left + plotW, y);
+        ctx.stroke();
+        ctx.fillText(v + '%', PAD.left - 6, y + 3);
+      });
+
+      // X-axis labels
+      ctx.textAlign = 'center';
+      const n = timeLabels.length;
+      if (n > 1) {
+        const step = Math.max(1, Math.floor(n / 6));
+        for (let i = 0; i < n; i += step) {
+          const x = PAD.left + (i / (MAX_POINTS - 1)) * plotW;
+          ctx.fillText(timeLabels[i], x, H - 6);
+        }
+      }
+
+      // Draw a line series with fill
+      function drawLine(data, color, fillColor) {
+        if (data.length < 2) return;
+        ctx.beginPath();
+        data.forEach((v, i) => {
+          const x = PAD.left + (i / (MAX_POINTS - 1)) * plotW;
+          const y = PAD.top  + plotH - (v / 100) * plotH;
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = color;
+        ctx.lineWidth   = 2;
+        ctx.stroke();
+
+        const lastX = PAD.left + ((data.length - 1) / (MAX_POINTS - 1)) * plotW;
+        ctx.lineTo(lastX, PAD.top + plotH);
+        ctx.lineTo(PAD.left, PAD.top + plotH);
+        ctx.closePath();
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+      }
+
+      drawLine(cpuHistory,  '#58a6ff', 'rgba(88,166,255,0.08)');
+      drawLine(ramHistory,  '#bc8cff', 'rgba(188,140,255,0.08)');
+      drawLine(diskHistory, '#3fb950', 'rgba(63,185,80,0.08)');
+      drawLine(netHistory,  '#f0883e', 'rgba(240,136,62,0.08)');
+    }
+
+    // ── Canvas: Gauge Chart ─────────────────────────────────────────────────────
+    const gaugeCanvas = document.getElementById('gaugeChart');
+
+    function drawGauge(avgPct) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = gaugeCanvas.getBoundingClientRect();
+      const cw = Math.round(rect.width  * dpr);
+      const ch = Math.round(rect.height * dpr);
+      if (gaugeCanvas.width !== cw || gaugeCanvas.height !== ch) {
+        gaugeCanvas.width  = cw;
+        gaugeCanvas.height = ch;
+      }
+
+      const ctx = gaugeCanvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const W = rect.width, H = rect.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const cx = W / 2;
+      const cy = H * 0.62;
+      const r  = Math.min(W, H) * 0.38;
+      const startAngle = Math.PI;
+      const endAngle   = 2 * Math.PI;
+      const fillAngle  = startAngle + (avgPct / 100) * Math.PI;
+
+      // Track
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startAngle, endAngle);
+      ctx.strokeStyle = '#21262d';
+      ctx.lineWidth   = 16;
+      ctx.lineCap     = 'round';
+      ctx.stroke();
+
+      // Fill colour based on level
+      const color = avgPct >= 80 ? '#f85149' : avgPct >= 60 ? '#d29922' : '#3fb950';
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startAngle, fillAngle);
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 16;
+      ctx.lineCap     = 'round';
+      ctx.stroke();
+
+      // Centre label
+      ctx.fillStyle = color;
+      ctx.font      = `bold ${Math.round(r * 0.55)}px -apple-system, Segoe UI, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(avgPct + '%', cx, cy - r * 0.05);
+
+      ctx.fillStyle = '#7d8590';
+      ctx.font      = `${Math.round(r * 0.22)}px -apple-system, Segoe UI, sans-serif`;
+      ctx.fillText('Beban Sistem', cx, cy + r * 0.28);
+
+      // Ticks 0 / 50 / 100
+      [0, 50, 100].forEach(v => {
+        const a = startAngle + (v / 100) * Math.PI;
+        const tx = cx + (r + 12) * Math.cos(a);
+        const ty = cy + (r + 12) * Math.sin(a);
+        ctx.fillStyle = '#484f58';
+        ctx.font = `9px -apple-system, Segoe UI, sans-serif`;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(v + '%', tx, ty);
+      });
+    }
+
+    // ── Tick Function ───────────────────────────────────────────────────────────
+    function tick() {
+      const m   = generateMockMetrics();
+      const now = new Date();
+      const label = now.getHours().toString().padStart(2,'0') + ':'
+                  + now.getMinutes().toString().padStart(2,'0') + ':'
+                  + now.getSeconds().toString().padStart(2,'0');
+
+      if (timeLabels.length >= MAX_POINTS) {
+        timeLabels.shift();
+        cpuHistory.shift();
+        ramHistory.shift();
+        diskHistory.shift();
+        netHistory.shift();
+      }
+      timeLabels.push(label);
+      cpuHistory.push(m.cpu);
+      ramHistory.push(m.ram);
+      diskHistory.push(m.disk);
+      netHistory.push(m.net);
+
+      const avg = Math.round((m.cpu + m.ram + m.disk + m.net) / 4);
+
+      updateCards(m);
+      checkAlerts(m);
+      drawLineChart();
+      drawGauge(avg);
+    }
+
+    // ── Resize Handler ──────────────────────────────────────────────────────────
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        drawLineChart();
+        const avg = cpuHistory.length
+          ? Math.round((
+              cpuHistory[cpuHistory.length-1] +
+              ramHistory[ramHistory.length-1] +
+              diskHistory[diskHistory.length-1] +
+              netHistory[netHistory.length-1]
+            ) / 4)
+          : 0;
+        drawGauge(avg);
+      }, 100);
+    });
+
+    // ── Init ────────────────────────────────────────────────────────────────────
+    tick();
+    setInterval(tick, 2000);
+  </script>
+</body>
+</html>
